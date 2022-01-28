@@ -183,8 +183,5 @@ if __name__ == '__main__':
             else:
                 print('[!] Error or no certificates found!')
                 print(response)
-
-
-
     else:
         print(f'[!] Unable to authenticate with the target')
