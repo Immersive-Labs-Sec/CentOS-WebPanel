@@ -93,7 +93,7 @@ echo '<textarea class="form-control">' . $output . '</textarea>';
     
     <?php
 // Easier just to use Curl Cookie output
-$output = shell_exec("curl -c - -k -X POST -d 'ip=86.160.74.94' https://127.0.0.1:2302/v1/sessionroot/");
+$output = shell_exec("curl -c - -k -X POST -d 'ip=127.0.0.1' https://127.0.0.1:2302/v1/sessionroot/");
 
 echo '<textarea class="form-control" rows=6>' . $output . '</textarea>';
 
